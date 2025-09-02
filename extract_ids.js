@@ -64,7 +64,7 @@ function extractIds() {
       }
     }
 
-    let line = group.id;
+    let line = "https://t.me/" + group.username;
     
     if (includeUsernames && group.username) {
       line += ` @${group.username}`;

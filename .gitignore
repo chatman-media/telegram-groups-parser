@@ -8,6 +8,8 @@ session.json
 groups.json
 group_ids.txt
 queries.txt
+cities.txt
+words.txt
 
 # Progress tracking files
 processed_queries.json

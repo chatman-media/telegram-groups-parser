@@ -15,7 +15,7 @@
     "filterByParticipants": true
   },
   "throttle": {
-    "betweenQueriesMs": 3000,
+    "betweenQueriesMs": 5000,
     "betweenRequestsMs": 1200,
     "maxRetries": 3,
     "retryBackoffMultiplier": 2,

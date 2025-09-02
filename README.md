@@ -8,6 +8,8 @@ A tool for searching and filtering Telegram groups/channels by keywords and part
 
 ### Features
 - Search Telegram groups/channels by keywords
+- Generate city+word combinations for comprehensive regional search
+- Automatic deduplication of all text files (queries, cities, words)
 - Filter results by minimum participant count
 - Resume interrupted operations (progress tracking)
 - Rate limiting and flood protection
@@ -46,14 +48,34 @@ A tool for searching and filtering Telegram groups/channels by keywords and part
 ### Usage
 
 #### Step 1: Search for groups
+
+**Option A: Regular search**
 ```bash
 node parse.js
 ```
+
+**Option B: Cities combinations search**
+```bash
+node parse.js --cities
+```
+
+**Other options:**
+```bash
+node parse.js --reset-progress    # Reset search progress
+node parse.js --help             # Show help
+```
+
 This will:
-- Search for groups/channels using keywords from `queries.txt`
+- Automatically remove duplicates from `queries.txt`, `cities.txt`, and `words.txt`
+- Search for groups/channels using keywords from `queries.txt` (regular mode) or generated combinations (cities mode)
 - Save results with participant counts to `groups.json`
 - Track progress in `processed_queries.json`
 - Resume from where it left off if interrupted
+
+**Cities mode (`--cities`):**
+- Generates all combinations from `cities.txt` and `words.txt`
+- Creates `queries_cities.txt` with combinations like "Moscow work", "Moscow freelance", etc.
+- Uses these combinations for search instead of `queries.txt`
 
 #### Step 2: Extract group IDs (optional)
 ```bash
@@ -125,7 +147,10 @@ Groups are saved in JSON format:
 - `parse.js` - Main search script / Основной скрипт поиска
 - `extract_ids.js` - ID extraction script / Скрипт извлечения ID
 - `config.json` - Configuration / Конфигурация
-- `queries.txt` - Search keywords / Ключевые слова для поиска
+- `queries.txt` - Search keywords (regular mode) / Ключевые слова для поиска (обычный режим)
+- `cities.txt` - List of cities (for --cities mode) / Список городов (для режима --cities)
+- `words.txt` - List of words (for --cities mode) / Список слов (для режима --cities)
+- `queries_cities.txt` - Generated city+word combinations / Сгенерированные комбинации город+слово
 - `groups.json` - All found groups with participant counts / Все найденные группы с количеством участников
 - `group_ids.txt` - Extracted group IDs / Извлеченные ID групп
 - `processed_queries.json` - Search progress / Прогресс поиска

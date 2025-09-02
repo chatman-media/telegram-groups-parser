@@ -196,6 +196,116 @@ async function safeInvoke(fn, desc = "request") {
   }
 }
 
+// -------- deduplication logic --------
+function deduplicateFile(filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.error(`Файл не найден: ${filePath}`);
+    return;
+  }
+
+  const fileName = filePath.split('/').pop();
+  console.log(`🔄 Дедупликация ${fileName}...`);
+  
+  const allLines = fs
+    .readFileSync(filePath, "utf8")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const originalCount = allLines.length;
+  
+  // Используем Set для удаления дублей
+  const uniqueLines = [...new Set(allLines)];
+  const uniqueCount = uniqueLines.length;
+  const duplicatesRemoved = originalCount - uniqueCount;
+
+  if (duplicatesRemoved > 0) {
+    // Перезаписываем файл с уникальными строками
+    fs.writeFileSync(filePath, uniqueLines.join('\n'), 'utf8');
+    console.log(`✅ ${fileName}: удалено ${duplicatesRemoved} дублей. Осталось ${uniqueCount} уникальных строк.`);
+  } else {
+    console.log(`✅ ${fileName}: дубли не найдены. Всего строк: ${uniqueCount}`);
+  }
+}
+
+function deduplicateAllFiles() {
+  const filesToCheck = [
+    cfg.search.queriesFile,
+    'cities.txt',
+    'words.txt'
+  ];
+
+  console.log("🔄 Проверка файлов на дубли...");
+  
+  filesToCheck.forEach(file => {
+    if (fs.existsSync(file)) {
+      deduplicateFile(file);
+    }
+  });
+}
+
+// -------- cities combinations logic --------
+function generateCitiesQueries() {
+  const citiesFile = "cities.txt";
+  const wordsFile = "words.txt";
+  const outputFile = "queries_cities.txt";
+
+  if (!fs.existsSync(citiesFile)) {
+    console.error(`Файл с городами не найден: ${citiesFile}`);
+    return false;
+  }
+
+  if (!fs.existsSync(wordsFile)) {
+    console.error(`Файл со словами не найден: ${wordsFile}`);
+    return false;
+  }
+
+  console.log("🏙️ Генерация комбинаций городов и слов...");
+
+  // Сначала дедуплицируем исходные файлы
+  deduplicateFile(citiesFile);
+  deduplicateFile(wordsFile);
+
+  const cities = fs
+    .readFileSync(citiesFile, "utf8")
+    .split(/\r?\n/)
+    .map((c) => c.trim())
+    .filter(Boolean);
+
+  const words = fs
+    .readFileSync(wordsFile, "utf8")
+    .split(/\r?\n/)
+    .map((w) => w.trim())
+    .filter(Boolean);
+
+  console.log(`📍 Городов: ${cities.length}`);
+  console.log(`📝 Слов: ${words.length}`);
+
+  // Генерируем все комбинации
+  const combinations = [];
+  for (const city of cities) {
+    for (const word of words) {
+      combinations.push(`${city} ${word}`);
+    }
+  }
+
+  console.log(`🔄 Сгенерировано комбинаций: ${combinations.length}`);
+
+  // Удаляем дубли
+  const uniqueCombinations = [...new Set(combinations)];
+  const duplicatesRemoved = combinations.length - uniqueCombinations.length;
+
+  if (duplicatesRemoved > 0) {
+    console.log(`✅ Удалено ${duplicatesRemoved} дублей. Осталось ${uniqueCombinations.length} уникальных комбинаций.`);
+  }
+
+  // Сохраняем в файл
+  fs.writeFileSync(outputFile, uniqueCombinations.join('\n'), 'utf8');
+  console.log(`💾 Комбинации сохранены в ${outputFile}`);
+
+  return outputFile;
+}
+
 // -------- search logic --------
 function sanitizeChat(chat) {
   // Унифицируем объект
@@ -222,19 +332,27 @@ function sanitizeChat(chat) {
   };
 }
 
-async function searchByQueries() {
+async function searchByQueries(useCustomQueriesFile = null) {
   const {
     search: { queriesFile, limitPerQuery, saveFile, processedQueriesFile },
     throttle: { betweenQueriesMs },
   } = cfg;
 
-  if (!fs.existsSync(queriesFile)) {
-    console.error(`Файл с запросами не найден: ${queriesFile}`);
+  // Используем переданный файл или стандартный
+  const actualQueriesFile = useCustomQueriesFile || queriesFile;
+
+  if (!fs.existsSync(actualQueriesFile)) {
+    console.error(`Файл с запросами не найден: ${actualQueriesFile}`);
     process.exit(1);
   }
 
+  // Дедупликация всех файлов перед началом парсинга (только если используем стандартные файлы)
+  if (!useCustomQueriesFile) {
+    deduplicateAllFiles();
+  }
+
   const allQueries = fs
-    .readFileSync(queriesFile, "utf8")
+    .readFileSync(actualQueriesFile, "utf8")
     .split(/\r?\n/)
     .map((q) => q.trim())
     .filter(Boolean);
@@ -330,11 +448,49 @@ function resetProgress() {
   }
 }
 
+// -------- help function --------
+function showHelp() {
+  console.log(`
+📖 Использование: node parse.js [опции]
+
+Опции:
+  --cities           Генерировать комбинации из cities.txt и words.txt
+  --reset-progress   Сбросить прогресс поиска
+  --help            Показать эту справку
+
+Примеры:
+  node parse.js                    # Обычный поиск по queries.txt
+  node parse.js --cities           # Поиск по комбинациям городов и слов
+  node parse.js --reset-progress   # Сбросить прогресс
+
+Файлы:
+  queries.txt       - Поисковые запросы (обычный режим)
+  cities.txt        - Список городов (режим --cities)
+  words.txt         - Список слов (режим --cities)
+  queries_cities.txt - Сгенерированные комбинации (создается автоматически)
+`);
+}
+
 // -------- main --------
 (async () => {
   // Проверяем аргументы командной строки
+  if (process.argv.includes('--help')) {
+    showHelp();
+    return;
+  }
+
   if (process.argv.includes('--reset-progress')) {
     resetProgress();
+    return;
+  }
+
+  if (process.argv.includes('--cities')) {
+    console.log("🏙️ Режим генерации комбинаций городов и слов");
+    const citiesQueriesFile = generateCitiesQueries();
+    if (citiesQueriesFile) {
+      await ensureLoggedIn();
+      await searchByQueries(citiesQueriesFile);
+    }
     return;
   }
 

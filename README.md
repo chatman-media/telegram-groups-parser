@@ -100,7 +100,18 @@ Edit `config.json` to customize settings:
     "queriesFile": "queries.txt",
     "limitPerQuery": 20,
     "saveFile": "groups.json",
-    "processedQueriesFile": "processed_queries.json"
+    "processedQueriesFile": "processed_queries.json",
+    "twoLevelParsing": {
+      "enabled": true,
+      "firstLevel": {
+        "limitPerQuery": 100,
+        "maxWords": 30
+      },
+      "secondLevel": {
+        "limitPerQuery": 20,
+        "useAllWords": true
+      }
+    }
   },
   "extract": {
     "inputFile": "groups.json",
@@ -124,6 +135,55 @@ Edit `config.json` to customize settings:
 node parse.js --reset-progress        # Reset search progress
 ```
 
+### Web Interface
+
+A modern web interface is available for easier management:
+
+```bash
+npm run dev     # Start development server
+npm run build   # Build for production
+npm start       # Start production server
+```
+
+**Features:**
+- 🔍 **Parsing Control** - Start/stop parsing with real-time logs
+- 📋 **ID Extraction** - Extract group IDs with filtering options
+- 📁 **File Management** - Edit queries, cities, words files
+- ⚙️ **Configuration** - Manage all settings including two-level parsing
+- 📊 **Statistics** - Real-time stats with progress tracking
+
+**Access:** Open http://localhost:3000 in your browser
+
+### 🔄 Two-Level Parsing
+
+New feature for more efficient data collection in cities mode:
+
+**How it works:**
+1. **First Level**: Uses high limit (100) for first N words (30)
+2. **Second Level**: Uses regular limit (20) for all words
+
+**Benefits:**
+- More results for popular queries
+- Time savings on less popular queries
+- Flexible configuration
+
+**Example:**
+- 28 cities × 30 first words = 840 queries with limit 100
+- 28 cities × 129 all words = 3612 queries with limit 20
+- Total: 4452 queries instead of 3612 in regular mode
+
+**Configuration parameters:**
+- `twoLevelParsing.enabled` - enable two-level parsing
+- `firstLevel.limitPerQuery` - results limit for first level (high)
+- `firstLevel.maxWords` - number of first words for first level
+- `secondLevel.limitPerQuery` - results limit for second level (regular)
+- `secondLevel.useAllWords` - use all words for second level
+
+**Testing:**
+```bash
+node test_two_level.js  # Check two-level parsing settings
+```
+
 ### Output Format
 
 Groups are saved in JSON format:
@@ -142,35 +202,41 @@ Groups are saved in JSON format:
 
 
 
-## Files / Файлы
+## Files
 
-- `parse.js` - Main search script / Основной скрипт поиска
-- `extract_ids.js` - ID extraction script / Скрипт извлечения ID
-- `config.json` - Configuration / Конфигурация
-- `queries.txt` - Search keywords (regular mode) / Ключевые слова для поиска (обычный режим)
-- `cities.txt` - List of cities (for --cities mode) / Список городов (для режима --cities)
-- `words.txt` - List of words (for --cities mode) / Список слов (для режима --cities)
-- `queries_cities.txt` - Generated city+word combinations / Сгенерированные комбинации город+слово
-- `groups.json` - All found groups with participant counts / Все найденные группы с количеством участников
-- `group_ids.txt` - Extracted group IDs / Извлеченные ID групп
-- `processed_queries.json` - Search progress / Прогресс поиска
-- `session.json` - Telegram session / Сессия Telegram
+- `parse.js` - Main search script
+- `extract_ids.js` - ID extraction script
+- `config.json` - Configuration
+- `queries.txt` - Search keywords (regular mode)
+- `cities.txt` - List of cities (for --cities mode)
+- `words.txt` - List of words (for --cities mode)
+- `queries_cities.txt` - Generated city+word combinations
+- `groups.json` - All found groups with participant counts
+- `group_ids.txt` - Extracted group IDs
+- `processed_queries.json` - Search progress
+- `session.json` - Telegram session
+- `test_two_level.js` - Two-level parsing test utility
 
-## Troubleshooting / Решение проблем
+## Troubleshooting
 
-### Common Issues / Частые проблемы
+### Common Issues
 
-1. **"Password is empty" error / Ошибка "Password is empty"**
-   - Add your 2FA password to `.env` file / Добавьте пароль 2FA в файл `.env`
-   - Or enter it when prompted / Или введите его при запросе
+1. **"Password is empty" error**
+   - Add your 2FA password to `.env` file
+   - Or enter it when prompted
 
-2. **FLOOD_WAIT errors / Ошибки FLOOD_WAIT**
-   - The script automatically handles these / Скрипт автоматически обрабатывает их
-   - Increase delays in config if needed / Увеличьте задержки в конфиге при необходимости
+2. **FLOOD_WAIT errors**
+   - The script automatically handles these
+   - Increase delays in config if needed
 
-3. **Session expired / Сессия истекла**
-   - Delete `session.json` and re-authenticate / Удалите `session.json` и авторизуйтесь заново
+3. **Session expired**
+   - Delete `session.json` and re-authenticate
 
-4. **No groups found / Группы не найдены**
-   - Check your search terms in `queries.txt` / Проверьте поисковые термины в `queries.txt`
-   - Try more general keywords / Попробуйте более общие ключевые слова
+4. **No groups found**
+   - Check your search terms in `queries.txt`
+   - Try more general keywords
+
+5. **Two-level parsing not working**
+   - Check configuration in `config.json`
+   - Run `node test_two_level.js` to verify settings
+   - Ensure `cities.txt` and `words.txt` exist

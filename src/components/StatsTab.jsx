@@ -135,6 +135,15 @@ function StatsTab({ stats }) {
                 {fileStats.cities.count} городов × {fileStats.words.count} слов
               </div>
             )}
+            {fileStats.combinations?.twoLevel?.enabled && (
+              <div style={{ fontSize: '11px', color: '#3498db', marginTop: '3px' }}>
+                🔄 Двухуровневый парсинг:
+                <br />
+                • Уровень 1: {formatNumber(fileStats.combinations.twoLevel.firstLevel.total)} (лимит {fileStats.combinations.twoLevel.firstLevel.limit}, {fileStats.combinations.twoLevel.firstLevel.maxWords} слов)
+                <br />
+                • Уровень 2: {formatNumber(fileStats.combinations.twoLevel.secondLevel.total)} (лимит {fileStats.combinations.twoLevel.secondLevel.limit})
+              </div>
+            )}
             {fileStats.combinations?.processed > 0 && (
               <div style={{ fontSize: '12px', color: '#27ae60' }}>
                 Обработано: {formatNumber(fileStats.combinations.processed)}

@@ -5,7 +5,18 @@
     "queriesFile": "queries.txt",
     "limitPerQuery": 20,
     "saveFile": "groups.json",
-    "processedQueriesFile": "processed_queries.json"
+    "processedQueriesFile": "processed_queries.json",
+    "twoLevelParsing": {
+      "enabled": true,
+      "firstLevel": {
+        "limitPerQuery": 100,
+        "maxWords": 30
+      },
+      "secondLevel": {
+        "limitPerQuery": 20,
+        "useAllWords": true
+      }
+    }
   },
   "extract": {
     "inputFile": "groups.json",

@@ -272,7 +272,7 @@ function generateCitiesQueries() {
     .map((c) => c.trim())
     .filter(Boolean);
 
-  const words = fs
+  let words = fs
     .readFileSync(wordsFile, "utf8")
     .split(/\r?\n/)
     .map((w) => w.trim())
@@ -281,26 +281,81 @@ function generateCitiesQueries() {
   console.log(`📍 Городов: ${cities.length}`);
   console.log(`📝 Слов: ${words.length}`);
 
-  // Генерируем все комбинации
-  const combinations = [];
-  for (const city of cities) {
-    for (const word of words) {
-      combinations.push(`${city} ${word}`);
+  // Проверяем настройки двухуровневого парсинга
+  const twoLevelConfig = cfg.search?.twoLevelParsing;
+  let allCombinations = [];
+
+  if (twoLevelConfig?.enabled) {
+    console.log("🔄 Двухуровневый парсинг включен");
+    
+    // Первый уровень: первые N слов с высоким лимитом
+    const firstLevelWords = words.slice(0, twoLevelConfig.firstLevel.maxWords);
+    console.log(`📊 Первый уровень: ${firstLevelWords.length} слов, лимит ${twoLevelConfig.firstLevel.limitPerQuery}`);
+    
+    for (const city of cities) {
+      for (const word of firstLevelWords) {
+        allCombinations.push({
+          query: `${city} ${word}`,
+          level: 1,
+          limit: twoLevelConfig.firstLevel.limitPerQuery
+        });
+      }
+    }
+
+    // Второй уровень: все слова с обычным лимитом
+    if (twoLevelConfig.secondLevel.useAllWords) {
+      console.log(`📊 Второй уровень: ${words.length} слов, лимит ${twoLevelConfig.secondLevel.limitPerQuery}`);
+      
+      for (const city of cities) {
+        for (const word of words) {
+          allCombinations.push({
+            query: `${city} ${word}`,
+            level: 2,
+            limit: twoLevelConfig.secondLevel.limitPerQuery
+          });
+        }
+      }
+    }
+  } else {
+    // Обычный режим: все комбинации с одним лимитом
+    console.log("🔄 Обычный режим генерации комбинаций");
+    for (const city of cities) {
+      for (const word of words) {
+        allCombinations.push({
+          query: `${city} ${word}`,
+          level: 1,
+          limit: cfg.search.limitPerQuery
+        });
+      }
     }
   }
 
-  console.log(`🔄 Сгенерировано комбинаций: ${combinations.length}`);
+  console.log(`🔄 Сгенерировано комбинаций: ${allCombinations.length}`);
 
-  // Удаляем дубли
-  const uniqueCombinations = [...new Set(combinations)];
-  const duplicatesRemoved = combinations.length - uniqueCombinations.length;
+  // Удаляем дубли по запросу
+  const uniqueQueries = new Map();
+  for (const combo of allCombinations) {
+    const key = combo.query;
+    if (!uniqueQueries.has(key) || uniqueQueries.get(key).level > combo.level) {
+      uniqueQueries.set(key, combo);
+    }
+  }
+
+  const uniqueCombinations = Array.from(uniqueQueries.values());
+  const duplicatesRemoved = allCombinations.length - uniqueCombinations.length;
 
   if (duplicatesRemoved > 0) {
     console.log(`✅ Удалено ${duplicatesRemoved} дублей. Осталось ${uniqueCombinations.length} уникальных комбинаций.`);
   }
 
-  // Сохраняем в файл
-  fs.writeFileSync(outputFile, uniqueCombinations.join('\n'), 'utf8');
+  // Сохраняем в файл с метаданными
+  const output = uniqueCombinations.map(combo => 
+    twoLevelConfig?.enabled ? 
+      `${combo.query}|level:${combo.level}|limit:${combo.limit}` : 
+      combo.query
+  ).join('\n');
+
+  fs.writeFileSync(outputFile, output, 'utf8');
   console.log(`💾 Комбинации сохранены в ${outputFile}`);
 
   return outputFile;
@@ -351,17 +406,29 @@ async function searchByQueries(useCustomQueriesFile = null) {
     deduplicateAllFiles();
   }
 
-  const allQueries = fs
+  const allQueriesRaw = fs
     .readFileSync(actualQueriesFile, "utf8")
     .split(/\r?\n/)
     .map((q) => q.trim())
     .filter(Boolean);
 
+  // Парсим запросы с метаданными (если есть)
+  const allQueries = allQueriesRaw.map(line => {
+    if (line.includes('|level:') && line.includes('|limit:')) {
+      const parts = line.split('|');
+      const query = parts[0];
+      const level = parseInt(parts[1].replace('level:', ''));
+      const limit = parseInt(parts[2].replace('limit:', ''));
+      return { query, level, limit };
+    }
+    return { query: line, level: 1, limit: limitPerQuery };
+  });
+
   // Загружаем уже обработанные запросы
   const processedQueries = new Set(loadJSON(processedQueriesFile, []));
 
   // Фильтруем только необработанные запросы
-  const queries = allQueries.filter(q => !processedQueries.has(q));
+  const queries = allQueries.filter(q => !processedQueries.has(q.query));
 
   console.log(`🔎 Всего запросов: ${allQueries.length}`);
   console.log(`📋 Уже обработано: ${processedQueries.size}`);
@@ -382,8 +449,10 @@ async function searchByQueries(useCustomQueriesFile = null) {
   }
 
   for (let i = 0; i < queries.length; i++) {
-    const q = queries[i];
-    console.log(`\n[${i + 1}/${queries.length}] Ищу: "${q}"`);
+    const queryObj = queries[i];
+    const { query: q, level, limit } = queryObj;
+    
+    console.log(`\n[${i + 1}/${queries.length}] Ищу: "${q}" (уровень ${level}, лимит ${limit})`);
 
     try {
       const res = await safeInvoke(
@@ -391,7 +460,7 @@ async function searchByQueries(useCustomQueriesFile = null) {
           client.invoke(
             new Api.contacts.Search({
               q,
-              limit: limitPerQuery,
+              limit: limit,
             })
           ),
         `contacts.Search("${q}")`

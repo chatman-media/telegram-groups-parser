@@ -75,9 +75,39 @@ function getCurrentStats() {
 
     // Calculate combinations for cities mode
     if (stats.cities && stats.words) {
-      stats.combinations = {
-        total: stats.cities.count * stats.words.count,
-        processed: stats.queries ? stats.queries.processed : 0
+      const config = loadJSON('config.json', {})
+      const twoLevelConfig = config.search?.twoLevelParsing
+      
+      if (twoLevelConfig?.enabled) {
+        // Двухуровневый парсинг
+        const firstLevelCombinations = stats.cities.count * Math.min(stats.words.count, twoLevelConfig.firstLevel.maxWords)
+        const secondLevelCombinations = twoLevelConfig.secondLevel.useAllWords ? 
+          stats.cities.count * stats.words.count : 0
+        
+        stats.combinations = {
+          total: firstLevelCombinations + secondLevelCombinations,
+          processed: stats.queries ? stats.queries.processed : 0,
+          twoLevel: {
+            enabled: true,
+            firstLevel: {
+              total: firstLevelCombinations,
+              limit: twoLevelConfig.firstLevel.limitPerQuery,
+              maxWords: twoLevelConfig.firstLevel.maxWords
+            },
+            secondLevel: {
+              total: secondLevelCombinations,
+              limit: twoLevelConfig.secondLevel.limitPerQuery,
+              useAllWords: twoLevelConfig.secondLevel.useAllWords
+            }
+          }
+        }
+      } else {
+        // Обычный режим
+        stats.combinations = {
+          total: stats.cities.count * stats.words.count,
+          processed: stats.queries ? stats.queries.processed : 0,
+          twoLevel: { enabled: false }
+        }
       }
     }
 
@@ -424,6 +454,17 @@ app.post('/api/deduplicate', (req, res) => {
 app.get('/api/config', (req, res) => {
   const config = loadJSON('config.json', {})
   res.json(config)
+})
+
+// Save config
+app.put('/api/config', (req, res) => {
+  try {
+    const config = req.body
+    fs.writeFileSync('config.json', JSON.stringify(config, null, 2), 'utf8')
+    res.json({ message: 'Configuration saved successfully' })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 })
 
 // Save config

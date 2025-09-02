@@ -12,6 +12,10 @@ cities.txt
 words.txt
 queries_cities.txt
 
+# React build
+dist/
+.vite/
+
 # Progress tracking files
 processed_queries.json
 
@@ -68,7 +72,7 @@ ehthumbs.db
 Thumbs.db
 
 # IDE files
-.vscode/
+.vscode/settings.json
 .idea/
 *.swp
 *.swo

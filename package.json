@@ -1,17 +1,37 @@
 {
   "name": "tg-parsing",
   "version": "1.0.0",
-  "description": "",
+  "description": "Telegram Groups Parser with React UI",
   "main": "index.js",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server.js",
+    "parse": "node parse.js",
+    "extract": "node extract_ids.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["telegram", "parser", "react"],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
     "dotenv": "^17.2.1",
-    "telegram": "^2.26.22"
+    "telegram": "^2.26.22",
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.0",
+    "@types/react": "^18.3.24",
+    "@types/react-dom": "^18.3.7",
+    "@types/ws": "^8.18.1",
+    "@vitejs/plugin-react": "^4.7.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "vite": "^5.4.19"
   }
 }

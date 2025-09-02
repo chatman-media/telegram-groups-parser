@@ -7,11 +7,12 @@
     "saveFile": "groups.json",
     "processedQueriesFile": "processed_queries.json"
   },
-  "filter": {
+  "extract": {
     "inputFile": "groups.json",
-    "outputFile": "filtered_groups.json",
-    "processedFile": "processed_filter.json",
-    "minParticipants": 1000
+    "outputFile": "group_ids.txt",
+    "includeUsernames": false,
+    "minParticipants": 600,
+    "filterByParticipants": true
   },
   "throttle": {
     "betweenQueriesMs": 3000,

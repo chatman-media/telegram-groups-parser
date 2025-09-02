@@ -60,22 +60,25 @@ node parse.js
 Это будет:
 
 - Искать группы/каналы по ключевым словам из `queries.txt`
-- Сохранять результаты в `groups.json`
+- Сохранять результаты с количеством участников в `groups.json`
 - Отслеживать прогресс в `processed_queries.json`
 - Продолжать с места остановки при прерывании
 
-#### Шаг 2: Фильтрация по количеству участников
+#### Шаг 2: Извлечение ID групп (опционально)
 
 ```bash
-node filter_groups.js
+node extract_ids.js                    # Извлечь ID с фильтрацией по участникам
+node extract_ids.js --with-usernames   # Извлечь ID с username
+node extract_ids.js --no-filter        # Извлечь все ID без фильтрации
+node extract_ids.js --help             # Показать справку
 ```
 
 Это будет:
 
 - Читать группы из `groups.json`
-- Проверять количество участников для каждой группы
-- Сохранять отфильтрованные результаты в `filtered_groups.json`
-- Отслеживать прогресс в `processed_filter.json`
+- Фильтровать по минимальному количеству участников (из конфига)
+- Извлекать только ID групп (по одному на строку)
+- Сохранять в `group_ids.txt`
 
 ### Конфигурация
 
@@ -89,11 +92,12 @@ node filter_groups.js
     "saveFile": "groups.json",
     "processedQueriesFile": "processed_queries.json"
   },
-  "filter": {
+  "extract": {
     "inputFile": "groups.json",
-    "outputFile": "filtered_groups.json",
-    "processedFile": "processed_filter.json",
-    "minParticipants": 1000
+    "outputFile": "group_ids.txt",
+    "includeUsernames": false,
+    "minParticipants": 1000,
+    "filterByParticipants": true
   },
   "throttle": {
     "betweenQueriesMs": 3000,
@@ -114,12 +118,13 @@ node filter_groups.js
 - `saveFile` - файл для сохранения всех найденных групп
 - `processedQueriesFile` - файл для отслеживания обработанных запросов
 
-**Фильтрация (filter):**
+**Извлечение ID (extract):**
 
-- `inputFile` - входной файл с группами для фильтрации
-- `outputFile` - выходной файл с отфильтрованными группами
-- `processedFile` - файл для отслеживания прогресса фильтрации
-- `minParticipants` - минимальное количество участников (по умолчанию 1000)
+- `inputFile` - входной файл с группами (по умолчанию groups.json)
+- `outputFile` - выходной файл с ID (по умолчанию group_ids.txt)
+- `includeUsernames` - добавлять ли @username после ID
+- `minParticipants` - минимальное количество участников для фильтрации
+- `filterByParticipants` - включить ли фильтрацию по участникам
 
 **Ограничения (throttle):**
 
@@ -133,7 +138,6 @@ node filter_groups.js
 
 ```bash
 node parse.js --reset-progress        # Сбросить прогресс поиска
-node filter_groups.js --reset-progress  # Сбросить прогресс фильтрации
 ```
 
 ### Формат вывода
@@ -162,13 +166,12 @@ node filter_groups.js --reset-progress  # Сбросить прогресс фи
 ## Файлы
 
 - `parse.js` - Основной скрипт поиска
-- `filter_groups.js` - Скрипт фильтрации
+- `extract_ids.js` - Скрипт извлечения ID с фильтрацией
 - `config.json` - Конфигурация
 - `queries.txt` - Ключевые слова для поиска
-- `groups.json` - Все найденные группы
-- `filtered_groups.json` - Отфильтрованные группы
+- `groups.json` - Все найденные группы с количеством участников
+- `group_ids.txt` - Извлеченные ID групп (только ID)
 - `processed_queries.json` - Прогресс поиска
-- `processed_filter.json` - Прогресс фильтрации
 - `session.json` - Сессия Telegram
 
 ## Решение проблем

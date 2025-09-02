@@ -51,19 +51,22 @@ node parse.js
 ```
 This will:
 - Search for groups/channels using keywords from `queries.txt`
-- Save results to `groups.json`
+- Save results with participant counts to `groups.json`
 - Track progress in `processed_queries.json`
 - Resume from where it left off if interrupted
 
-#### Step 2: Filter by participant count
+#### Step 2: Extract group IDs (optional)
 ```bash
-node filter_groups.js
+node extract_ids.js                    # Extract IDs with participant filtering
+node extract_ids.js --with-usernames   # Extract IDs with usernames
+node extract_ids.js --no-filter        # Extract all IDs without filtering
+node extract_ids.js --help             # Show help
 ```
 This will:
 - Read groups from `groups.json`
-- Check participant count for each group
-- Save filtered results to `filtered_groups.json`
-- Track progress in `processed_filter.json`
+- Filter by minimum participant count (from config)
+- Extract only group IDs (one per line)
+- Save to `group_ids.txt`
 
 ### Configuration
 
@@ -77,11 +80,12 @@ Edit `config.json` to customize settings:
     "saveFile": "groups.json",
     "processedQueriesFile": "processed_queries.json"
   },
-  "filter": {
+  "extract": {
     "inputFile": "groups.json",
-    "outputFile": "filtered_groups.json",
-    "processedFile": "processed_filter.json",
-    "minParticipants": 1000
+    "outputFile": "group_ids.txt",
+    "includeUsernames": false,
+    "minParticipants": 1000,
+    "filterByParticipants": true
   },
   "throttle": {
     "betweenQueriesMs": 3000,
@@ -96,7 +100,6 @@ Edit `config.json` to customize settings:
 ### Reset Progress
 ```bash
 node parse.js --reset-progress        # Reset search progress
-node filter_groups.js --reset-progress  # Reset filter progress
 ```
 
 ### Output Format
@@ -120,13 +123,12 @@ Groups are saved in JSON format:
 ## Files / Файлы
 
 - `parse.js` - Main search script / Основной скрипт поиска
-- `filter_groups.js` - Filtering script / Скрипт фильтрации
+- `extract_ids.js` - ID extraction script / Скрипт извлечения ID
 - `config.json` - Configuration / Конфигурация
 - `queries.txt` - Search keywords / Ключевые слова для поиска
-- `groups.json` - All found groups / Все найденные группы
-- `filtered_groups.json` - Filtered groups / Отфильтрованные группы
+- `groups.json` - All found groups with participant counts / Все найденные группы с количеством участников
+- `group_ids.txt` - Extracted group IDs / Извлеченные ID групп
 - `processed_queries.json` - Search progress / Прогресс поиска
-- `processed_filter.json` - Filter progress / Прогресс фильтрации
 - `session.json` - Telegram session / Сессия Telegram
 
 ## Troubleshooting / Решение проблем

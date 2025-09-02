@@ -6,12 +6,11 @@ session.json
 
 # Results and data files
 groups.json
-filtered_groups.json
+group_ids.txt
 queries.txt
 
 # Progress tracking files
 processed_queries.json
-processed_filter.json
 
 # Node.js
 node_modules/

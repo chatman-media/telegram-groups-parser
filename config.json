@@ -1,0 +1,23 @@
+{
+  "sessionFile": "session.json",
+  "stringSession": "",
+  "search": {
+    "queriesFile": "queries.txt",
+    "limitPerQuery": 20,
+    "saveFile": "groups.json",
+    "processedQueriesFile": "processed_queries.json"
+  },
+  "filter": {
+    "inputFile": "groups.json",
+    "outputFile": "filtered_groups.json",
+    "processedFile": "processed_filter.json",
+    "minParticipants": 1000
+  },
+  "throttle": {
+    "betweenQueriesMs": 3000,
+    "betweenRequestsMs": 1200,
+    "maxRetries": 3,
+    "retryBackoffMultiplier": 2,
+    "floodWaitCapSec": 900
+  }
+}

@@ -10,6 +10,7 @@ group_ids.txt
 queries.txt
 cities.txt
 words.txt
+queries_cities.txt
 
 # Progress tracking files
 processed_queries.json

@@ -7,7 +7,7 @@
     "saveFile": "groups.json",
     "processedQueriesFile": "processed_queries.json",
     "twoLevelParsing": {
-      "enabled": true,
+      "enabled": false,
       "firstLevel": {
         "limitPerQuery": 100,
         "maxWords": 30
@@ -26,7 +26,7 @@
     "filterByParticipants": true
   },
   "throttle": {
-    "betweenQueriesMs": 5000,
+    "betweenQueriesMs": 1000,
     "betweenRequestsMs": 1200,
     "maxRetries": 3,
     "retryBackoffMultiplier": 2,
